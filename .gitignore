@@ -1,0 +1,33 @@
+# GitMon project .gitignore
+
+# Node.js dependencies
+node_modules/
+qa/node_modules/
+
+# QA artifacts and screenshots (generated, not source)
+qa/screenshots/
+qa/*.log
+qa/*.json
+qa/*.md
+
+# Build artifacts (if any)
+dist/
+build/
+
+# OS generated files
+Thumbs.db
+.DS_Store
+
+# IDE files
+.vscode/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# NPM logs
+npm-debug.log*
+
+# Keep documentation screenshots (these are part of repo)
+!docs/screenshots/
