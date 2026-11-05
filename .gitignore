@@ -5,6 +5,7 @@ node_modules/
 qa/node_modules/
 
 # QA artifacts and screenshots (generated, not source)
+qa/
 qa/screenshots/
 qa/*.log
 qa/*.json
