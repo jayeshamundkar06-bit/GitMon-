@@ -32,6 +32,7 @@ let currentGraphContainer = null;
 let renderScheduled = false; // debounce via requestAnimationFrame
 let discoveryObserver = null;
 let calendarObserver = null;
+let rendering = false;
 // Cache of date -> { count, sprite }
 const contributionCache = new Map();
 
@@ -61,6 +62,7 @@ function spriteForCount(count) {
 
 // Extract the exact contribution count from a cell's tooltip.
 function getContributionCount(cell) {
+  if (!cell) return 0;
   const tooltipId = cell.getAttribute('aria-labelledby');
   if (!tooltipId) {
     console.warn('[GitMon DEBUG] Cell missing aria-labelledby');
@@ -71,13 +73,23 @@ function getContributionCount(cell) {
     console.warn('[GitMon DEBUG] Tooltip element not found for id', tooltipId);
     return 0;
   }
-  const text = tooltipEl.textContent || '';
-  const match = text.match(/(\d+) contribution/);
+  const text = (tooltipEl.textContent || '').trim();
+  if (!text) {
+    return 0;
+  }
+
+  // Handle explicit zero-contribution wording (singular or plural)
+  if (/^no\s+contributions?\b/i.test(text)) {
+    return 0;
+  }
+
+  // Handle numeric count (singular or plural): "1 contribution...", "5 contributions..."
+  const match = text.match(/(\d+)\s+contributions?\b/i);
   if (match) {
     const count = parseInt(match[1], 10);
-    console.log(`[GitMon DEBUG] Parsed count ${count} from tooltip "${text.trim()}"`);
-    return count;
+    return isNaN(count) ? 0 : count;
   }
+
   console.warn('[GitMon DEBUG] Failed to parse contribution count from tooltip:', text);
   return 0;
 }
@@ -97,14 +109,17 @@ function clearLegend() {
   console.log('[GitMon DEBUG] Legend images cleared');
 }
 
-// Core rendering – schedule via requestAnimationFrame to batch work.
+// Core rendering – schedule via requestAnimationFrame to batch work with timeout fallback for background tabs.
 function scheduleRender() {
   if (renderScheduled) return;
   renderScheduled = true;
-  requestAnimationFrame(() => {
+  const execute = () => {
+    if (!renderScheduled) return;
     renderScheduled = false;
     renderAll();
-  });
+  };
+  requestAnimationFrame(execute);
+  setTimeout(execute, 100);
 }
 
 function renderAll() {
@@ -227,38 +242,8 @@ function renderLegend() {
 // Start a MutationObserver scoped to the contribution graph container.
 function startCalendarObserver(container) {
   if (calendarObserver) calendarObserver.disconnect();
-  calendarObserver = new MutationObserver((mutations) => {
-    // If we are currently rendering, ignore mutations caused by our own DOM changes.
-    if (rendering) return;
-
-    const needsRender = mutations.some((m) => {
-      const added = Array.from(m.addedNodes).some((n) => n.matches && n.matches(DAY_CELL_SELECTOR));
-      const removed = Array.from(m.removedNodes).some((n) => n.matches && n.matches(DAY_CELL_SELECTOR));
-      const legendChanged = Array.from(m.addedNodes).some((n) => n.matches && n.matches(`${LEGEND_SELECTOR} li`)) ||
-                           Array.from(m.removedNodes).some((n) => n.matches && n.matches(`${LEGEND_SELECTOR} li`));
-      return added || removed || legendChanged;
-    });
-
-    if (needsRender) {
-      console.log('[GitMon DEBUG] Calendar mutation detected – scheduling render');
-      scheduleRender();
-    }
-  });
-  calendarObserver.observe(container, { childList: true, subtree: true });
-  console.log('[GitMon DEBUG] Calendar observer attached');
-/* New observer that handles container replacement */
-function startCalendarObserver(container) {
-  if (calendarObserver) calendarObserver.disconnect();
   currentGraphContainer = container;
   calendarObserver = new MutationObserver((mutations) => {
-    // If container removed (GitHub replaced the whole graph), re‑discover
-    if (!container.isConnected) {
-      console.log('[GitMon DEBUG] Graph container removed – re‑discovering');
-      calendarObserver.disconnect();
-      calendarObserver = null;
-      startDiscoveryObserver();
-      return;
-    }
     if (rendering) return;
     const needsRender = mutations.some((m) => {
       const added = Array.from(m.addedNodes).some((n) => n.matches && n.matches(DAY_CELL_SELECTOR));
@@ -275,37 +260,23 @@ function startCalendarObserver(container) {
   calendarObserver.observe(container, { childList: true, subtree: true });
   console.log('[GitMon DEBUG] Calendar observer attached (enhanced)');
 }
-}
 
-// Observe the whole document until the contribution graph container appears.
+// Observe the whole document for contribution graph appearance and replacements (year switching)
 function startDiscoveryObserver() {
   if (discoveryObserver) discoveryObserver.disconnect();
-  discoveryObserver = new MutationObserver((mutations, obs) => {
+  discoveryObserver = new MutationObserver(() => {
+    if (rendering) return;
     const graph = getGraphContainer();
     if (graph) {
-      console.log('[GitMon DEBUG] Contribution graph container discovered');
-      obs.disconnect();
-      discoveryObserver = null;
-      scheduleRender();
-      startCalendarObserver(graph);
+      if (graph !== currentGraphContainer || !graph.querySelector('img.gitmon-overlay')) {
+        currentGraphContainer = graph;
+        scheduleRender();
+        startCalendarObserver(graph);
+      }
     }
   });
   discoveryObserver.observe(document.body, { childList: true, subtree: true });
-  console.log('[GitMon DEBUG] Discovery observer started');
-}
-  if (discoveryObserver) discoveryObserver.disconnect();
-  discoveryObserver = new MutationObserver((mutations, obs) => {
-    const graph = document.querySelector(GRAPH_CONTAINER_SELECTOR);
-    if (graph) {
-      console.log('[GitMon DEBUG] Contribution graph container discovered');
-      obs.disconnect();
-      discoveryObserver = null;
-      scheduleRender();
-      startCalendarObserver(graph);
-    }
-  });
-  discoveryObserver.observe(document.body, { childList: true, subtree: true });
-  console.log('[GitMon DEBUG] Discovery observer started');
+  console.log('[GitMon DEBUG] Discovery observer active');
 }
 
 function init() {
@@ -319,15 +290,16 @@ function init() {
       if (calendarObserver) calendarObserver.disconnect();
       return;
     }
-    const graph = document.querySelector(GRAPH_CONTAINER_SELECTOR);
+    const graph = getGraphContainer();
     if (graph) {
       console.log('[GitMon DEBUG] Graph container already present');
+      currentGraphContainer = graph;
       scheduleRender();
       startCalendarObserver(graph);
     } else {
       console.log('[GitMon DEBUG] Graph container not present – starting discovery observer');
-      startDiscoveryObserver();
     }
+    startDiscoveryObserver();
   });
 }
 
@@ -336,6 +308,9 @@ if (document.readyState === 'loading') {
 } else {
   init();
 }
+document.addEventListener("turbo:render", init);
+document.addEventListener("turbo:load", init);
+
 
 // Exported test helper (optional, can be used from console)
 function testSpriteMapping() {
@@ -345,4 +320,14 @@ function testSpriteMapping() {
     console.log(`${i} contribution(s) => ${sprite ? sprite : 'original'}`);
   }
   console.log('--- End of Test ---');
+}
+
+// Listen for live settings changes from popup
+if (chrome.storage && chrome.storage.onChanged) {
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area === 'local') {
+      console.log('[GitMon DEBUG] Storage changed – re-initializing');
+      init();
+    }
+  });
 }

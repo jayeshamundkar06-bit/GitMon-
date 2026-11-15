@@ -2,24 +2,154 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>GitMon</title>
   <link rel="stylesheet" href="popup.css" />
 </head>
 <body>
-  <div class="container">
-    <h1>GitMon</h1>
-    <label class="switch">
-      <input type="checkbox" id="enableToggle" />
-      <span class="slider"></span>
-    </label>
-    <span id="statusText">Enabled</span>
-    <br/>
-    <label class="switch" style="margin-top:8px;">
-      <input type="checkbox" id="originalToggle" />
-      <span class="slider"></span>
-    </label>
-    <span id="originalText">Original Colors</span>
+  <div class="popup-container">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-brand">
+        <div class="logo-wrapper">
+          <svg class="github-icon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+            <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <h1 class="brand-name">GitMon</h1>
+          <span class="brand-tag">v1.0</span>
+        </div>
+      </div>
+      <div id="headerStatus" class="header-status status-active">
+        <span class="status-dot"></span>
+        <span class="status-text">Active</span>
+      </div>
+    </header>
+
+    <!-- Settings Cards -->
+    <main class="settings-list">
+      <!-- Enabled Setting Card -->
+      <section class="card setting-card">
+        <div class="card-icon-col">
+          <div class="icon-circle icon-cyan">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path>
+              <line x1="12" y1="2" x2="12" y2="12"></line>
+            </svg>
+          </div>
+        </div>
+        <div class="card-content">
+          <div class="card-top-row">
+            <span class="card-title">Extension Status</span>
+            <span id="statusText" class="badge badge-enabled">Enabled</span>
+          </div>
+          <p class="card-desc">Enable or pause sprite transformations on GitHub contribution grids.</p>
+        </div>
+        <div class="card-action">
+          <label class="switch" for="enableToggle">
+            <input type="checkbox" id="enableToggle" />
+            <span class="slider"></span>
+          </label>
+        </div>
+      </section>
+
+      <!-- Pokémon Theme Setting Card -->
+      <section class="card setting-card">
+        <div class="card-icon-col">
+          <div class="icon-circle icon-purple">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+            </svg>
+          </div>
+        </div>
+        <div class="card-content">
+          <div class="card-top-row">
+            <span class="card-title">Pokémon Theme</span>
+            <span id="originalText" class="badge badge-pokemon">Pokémon Theme</span>
+          </div>
+          <p class="card-desc">Toggle between Charizard evolution sprites and standard GitHub colors.</p>
+        </div>
+        <div class="card-action">
+          <label class="switch" for="originalToggle">
+            <input type="checkbox" id="originalToggle" />
+            <span class="slider"></span>
+          </label>
+        </div>
+      </section>
+
+      <!-- Visual Preview Card -->
+      <section class="card preview-card" id="previewCard">
+        <div class="preview-header">
+          <div class="preview-header-left">
+            <svg class="preview-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="7" height="7"></rect>
+              <rect x="14" y="3" width="7" height="7"></rect>
+              <rect x="14" y="14" width="7" height="7"></rect>
+              <rect x="3" y="14" width="7" height="7"></rect>
+            </svg>
+            <span class="preview-title">Contribution Preview</span>
+          </div>
+          <span class="preview-badge" id="previewModeLabel">Charizard Evolution</span>
+        </div>
+
+        <div class="preview-grid mode-pokemon" id="previewGrid">
+          <div class="preview-item">
+            <div class="preview-tile tile-empty" title="0 commits">
+              <span class="tile-fallback"></span>
+            </div>
+            <span class="preview-count">0</span>
+          </div>
+          <div class="preview-item">
+            <div class="preview-tile tile-sprite" title="1 commit (Charmander)">
+              <img src="assets/charmander.png" alt="Charmander" class="preview-img" />
+              <span class="tile-classic level-1"></span>
+            </div>
+            <span class="preview-count">1</span>
+          </div>
+          <div class="preview-item">
+            <div class="preview-tile tile-sprite" title="2-3 commits (Charmeleon)">
+              <img src="assets/charmeleon.png" alt="Charmeleon" class="preview-img" />
+              <span class="tile-classic level-2"></span>
+            </div>
+            <span class="preview-count">3</span>
+          </div>
+          <div class="preview-item">
+            <div class="preview-tile tile-sprite" title="4-6 commits (Charizard)">
+              <img src="assets/charizard.png" alt="Charizard" class="preview-img" />
+              <span class="tile-classic level-3"></span>
+            </div>
+            <span class="preview-count">6</span>
+          </div>
+          <div class="preview-item">
+            <div class="preview-tile tile-sprite" title="7-9 commits (Mega Charizard X)">
+              <img src="assets/mega-charizard-x.png" alt="Mega Charizard X" class="preview-img" />
+              <span class="tile-classic level-4"></span>
+            </div>
+            <span class="preview-count">9</span>
+          </div>
+          <div class="preview-item">
+            <div class="preview-tile tile-sprite" title="10+ commits (Mega Charizard Y)">
+              <img src="assets/mega-charizard-y.png" alt="Mega Charizard Y" class="preview-img" />
+              <span class="tile-classic level-5"></span>
+            </div>
+            <span class="preview-count">10+</span>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <a href="https://github.com/jayeshamundkar06-bit" target="_blank" rel="noopener noreferrer" class="profile-link">
+        <svg class="profile-github-icon" viewBox="0 0 24 24" width="13" height="13" fill="currentColor">
+          <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+        </svg>
+        <span>jayeshamundkar06-bit</span>
+      </a>
+    </footer>
   </div>
+
   <script src="popup.js"></script>
 </body>
 </html>
