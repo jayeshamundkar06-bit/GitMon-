@@ -25,9 +25,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // 3. Pokémon Theme / Original Colors Toggle & Text
-    originalToggle.checked = useOriginal;
-    originalText.textContent = useOriginal ? 'Original Colors' : 'Pokémon Theme';
-    originalText.className = 'badge ' + (useOriginal ? 'badge-original' : 'badge-pokemon');
+    // Toggle ON means Pokémon Theme (!useOriginal); Toggle OFF means Original Colors (useOriginal)
+    const isPokemonTheme = !useOriginal;
+    originalToggle.checked = isPokemonTheme;
+    originalText.textContent = isPokemonTheme ? 'Pokémon Theme' : 'Original Colors';
+    originalText.className = 'badge ' + (isPokemonTheme ? 'badge-pokemon' : 'badge-original');
     originalText.style.color = ''; // clean inline style
 
     // 4. Contribution Preview Strip
@@ -73,9 +75,10 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Listen for original colors toggle changes
+  // Listen for Pokémon theme / original colors toggle changes
   originalToggle.addEventListener('change', () => {
-    const useOriginal = originalToggle.checked;
+    const isPokemonTheme = originalToggle.checked;
+    const useOriginal = !isPokemonTheme;
     chrome.storage.local.set({ originalColors: useOriginal }, () => {
       chrome.storage.local.get(['enabled'], (result) => {
         const enabled = result.enabled !== undefined ? result.enabled : true;
