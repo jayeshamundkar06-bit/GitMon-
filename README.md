@@ -53,3 +53,5 @@ The Pokémon artwork is fan‑created and used **solely for demonstration purpos
 
 ---
 *Created for the Chrome Web Store release.*
+
+https://github.com/user-attachments/assets/a94a612c-d443-4b7e-b26b-734422aef4e9
